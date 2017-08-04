@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>Taipei bus</title>
+</head>
+<style type="text/css">
+	#map{
+		height: 1000px;
+		width: 100%;
+	}
+</style>
+<body>
+	<form action="/search" method="post">
+		<input type="text" name="road">
+		<input type="submit" name="submit">
+	</form>
+	<div id="map"></div>
+</body>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+<script async defer
+src="https://maps.googleapis.com/maps/api/js?key=AIzaSyD_ojiYCBZqOHUJnZRxw346XIVBECpbGSM&callback=initMap"
+>
+</script>
+<script>
+	var data = <%- JSON.stringify(data) %> ;
+	var locations = [];
+	var send_Data = [];
+	var index = 0;
+	var geoTimer;
+
+    function initMap() {
+	    var geocoder = new google.maps.Geocoder();
+	    var map = new google.maps.Map(document.getElementById('map'), {
+	    	center:　{lat: -25.363, lng: 131.044},
+	    	zoom: 13
+	    });
+	    var add = 'taipei';
+	    geocoder.geocode({'address': add}, function(results, status) {
+	    	if (status === 'OK') {
+	    		map.setCenter(results[0].geometry.location);
+	    	} else {
+	    		alert('Geocode was not successful for the following reason: ' + status);
+	    	}
+	    });
+	    if (data.go.length != 0)
+	    	geoTimer = setInterval(geocodeAddress, 500, geocoder, map, 0);
+
+	}
+	function geocodeAddress(geocoder, resultsMap, direct) {
+		// Detect direction is 'go' or 'back'
+		if (direct == 0) {
+			var name = data.go[index].name;
+		} else {
+			var name = data.back[index].name;
+		}
+		// Generating the location information of the stop name by Geocoder
+		geocoder.geocode({
+			'address': name + "台北",
+			componentRestrictions: {
+				country: 'TW'
+			}
+		}, function(results, status) {
+
+			if (status === 'OK') {
+				var obj = {
+					'name': name,
+					'location': results[0].geometry.location
+				};
+				send_Data.push(obj);
+				locations.push(results[0].geometry.location);
+				var marker = new google.maps.Marker({
+					map: resultsMap,
+					position: results[0].geometry.location,
+					label: name
+				});
+				index++;
+			} else {
+				if (status == google.maps.GeocoderStatus.ZERO_RESULTS) {
+					console.log(name);
+				} else {
+					console.log("Geocode was  not successful: " + status);
+				}
+			}
+			
+			// End State
+			if (direct == 0 && index == data.go.length -1) {
+				clearInterval(geoTimer);
+				var Path = new google.maps.Polyline({
+					path: locations,
+					geodesic: true,
+					strokeColor: '#FF0000',
+					strokeOpacity: 1.0,
+					strokeWeight: 2
+				});
+				Path.setMap(resultsMap);	
+				index = 0;
+				locations = new Array();
+				// Generating back information of the stop name
+				geoTimer = setInterval(geocodeAddress, 500, geocoder, resultsMap, 1);
+			} else if (direct == 1 && index == data.back.length - 1) {
+				clearInterval(geoTimer);
+				var Path = new google.maps.Polyline({
+					path: locations,
+					geodesic: true,
+					strokeColor: '#0000FF',
+					strokeOpacity: 1.0,
+					strokeWeight: 2
+				});
+				Path.setMap(resultsMap);
+				index = 0;
+				locations = new Array();
+			}
+		});
+	}
+	// function geocodeAddress(geocoder, resultsMap) {
+	// 	for (var i = 0; i < data.go.length; i++) {
+	// 		setTimeout("wait=true", 2000);
+	// 		geocoder.geocode({'address': data.go[i].name + " taipei"}, function(results, status) {
+	// 			if (status === 'OK') {
+	// 				locations.push(results[0].geometry.location);
+	// 			} else {
+	// 				alert("Failed to geocode" + status);
+	// 			}
+	// 		});
+	// 	}
+ //    }
+ 	// function geocodeAddress(geocoder, resultsMap) {
+ 	// 	var locations = [];
+ 	// 	var name = [];
+ 	// 	for (var i = 0; i < data.go.length; i++) {
+ 	// 		name.push(data.go[i].name + " taipei");
+ 	// 	}
+ 	// 	geocoder.geocode({'address': name}, function(results, status){
+ 	// 		if ( status === 'OK') {
+ 	// 			for (var i = 0; i < results.length; i++) {
+ 	// 				locations.push(results[i].geometry.location);
+ 	// 				console.log(result[i].geometry.location);
+ 	// 			}
+ 	// 		} else {
+ 	// 			alert("Geocode was not successful for the following reason: " + status);
+ 	// 		}
+ 	// 	});
+ 	// }
+
+</script>
+
+</html>
+
