@@ -65,7 +65,8 @@ src="https://maps.googleapis.com/maps/api/js?key=AIzaSyD_ojiYCBZqOHUJnZRxw346XIV
 			if (status === 'OK') {
 				var obj = {
 					'name': name,
-					'location': results[0].geometry.location
+					'lat': results[0].geometry.location.lat(),
+					'lng': results[0].geometry.location.lng()
 				};
 				send_Data.push(obj);
 				locations.push(results[0].geometry.location);
@@ -110,6 +111,19 @@ src="https://maps.googleapis.com/maps/api/js?key=AIzaSyD_ojiYCBZqOHUJnZRxw346XIV
 				Path.setMap(resultsMap);
 				index = 0;
 				locations = new Array();
+				$.ajax({
+					data: {'data': send_Data},
+					dataType: 'JSON',
+					url: '/send',
+					type: 'POST',
+					success: function(msg) {
+						console.log(msg);
+					},
+					error: function(jqXHR, textStatus, errorThrown) {
+						alert('error: ' + textStatus + " " + errorThrown);
+					}
+
+				});
 			}
 		});
 	}

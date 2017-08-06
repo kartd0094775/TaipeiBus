@@ -1,42 +1,11 @@
-﻿// module.exports = function(app){
-
-//     app.get("/", function (req,res) {
-//         res.render('index');
-//     })
-
-//     app.post('/search', function(req, res){
-
-//         var request = require("request");
-
-//         var url = 'http://www.omdbapi.com/?s=' + req.body.name;
-
-//         console.log('request url: ' + url);
-
-//         request({ url: url, json: true}, function (error, response, body) {
-
-//             if (!error && response.statusCode == 200) {
-//                 var array = [];
-//                 if (body.Response == "False"){
-//                     res.render('result',{ movies:array });
-//                 }
-                
-//                 for (var i = 0 ; i < body.Search.length ; i ++){
-//                     array.push({'Title':body.Search[i].Title,
-//                         'Year':body.Search[i].Year,
-//                         'imdbID':body.Search[i].imdbID,
-//                         'Type':body.Search[i].Type,
-//                         'Poster':body.Search[i].Poster,
-//                     });。
-//                 }
-//                 res.render('result',{ movies:array });
-//             }
-//         })
-//     });
-
-//     app.get("*", function (req,res) {
-//         res.send('page not found');
-//     })
-// };
+﻿var mysql = require('mysql');
+var connection = mysql.createConnection({
+    host: 'localhost',
+    user: 'root',
+    password: '',
+    database: 'taipeibus'
+});
+connection.connect();
 module.exports = function(app){
 
     app.get("/", function (req,res) {
@@ -54,13 +23,35 @@ module.exports = function(app){
     app.post('/search', function(req, res){
         var bus = require('taipei-bus');
         bus(req.body.road, function(error, data) {
+            var send_Data
             if (error != null) {
                 console.log(error);
                 return;
             }
-            res.render('index', {data: data});
+            for (var i in data.go) {
+                connection.query("SELECT * FROM stop WHERE nane=\"" + data.go[i].name + "\"", 
+                    function(req, res) {
+
+                    });
+            }
+            res.render('index', {data: send_Data});
         })
 
+    });
+
+    app.post('/send', function(req, res) {
+        console.log(req.body.data);
+        for (var i in req.body.data) {
+            connection.query("INSERT INTO stop (name, lat, lng) VALUES (\"" + req.body.data[i].name 
+                + "\", " + req.body.data[i].lat
+                + ", " + req.body.data[i].lng
+                + ")", function(err) {
+                    if (err)
+                        console.log(err);
+                });
+        }
+        res.send({'msg': 'Successful'});
+        connection.end();
     });
 
     app.get("*", function (req,res) {
